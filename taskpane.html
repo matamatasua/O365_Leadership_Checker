@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leadership Checker</title>
+    
+    <!-- Office.js -->
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 14px;
+            padding: 16px;
+            background: #fafafa;
+            color: #333;
+        }
+        
+        h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #0078d4;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+        
+        .leader-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .leader-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .status-icon.present {
+            background: #dff6dd;
+            color: #107c10;
+        }
+        
+        .status-icon.absent {
+            background: #fde7e9;
+            color: #d13438;
+        }
+        
+        .leader-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .leader-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .leader-email {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .leader-context {
+            font-size: 11px;
+            color: #0078d4;
+            margin-top: 2px;
+        }
+        
+        .summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .summary-count {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .summary-count.present { color: #107c10; }
+        .summary-count.absent { color: #d13438; }
+        
+        .summary-label {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .btn {
+            background: #0078d4;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .btn:hover {
+            background: #106ebe;
+        }
+        
+        .btn-secondary {
+            background: #f3f3f3;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e5e5;
+        }
+        
+        .config-section {
+            display: none;
+        }
+        
+        .config-section.active {
+            display: block;
+        }
+        
+        .config-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .config-input:focus {
+            outline: none;
+            border-color: #0078d4;
+        }
+        
+        .config-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .config-row input {
+            flex: 1;
+        }
+        
+        .remove-btn {
+            background: #fde7e9;
+            color: #d13438;
+            border: none;
+            width: 32px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: #f3f3f3;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #0078d4;
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 24px;
+            color: #666;
+        }
+        
+        .empty-state p {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>👥 Leadership Checker</h1>
+    
+    <div class="tabs">
+        <button class="tab active" data-tab="results" onclick="switchTab('results')">Results</button>
+        <button class="tab" data-tab="config" onclick="switchTab('config')">Configure</button>
+    </div>
+    
+    <div id="results-tab">
+        <div id="loading" class="loading">
+            Loading...
+        </div>
+        
+        <div id="results" style="display: none;">
+            <div class="section">
+                <div class="summary">
+                    <div class="summary-item">
+                        <span class="summary-count present" id="present-count">0</span>
+                        <span class="summary-label">Present</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-count absent" id="absent-count">0</span>
+                        <span class="summary-label">Missing</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Leadership Team</div>
+                <div id="leader-list"></div>
+            </div>
+            
+            <button class="btn" onclick="checkLeadership()">🔄 Refresh</button>
+        </div>
+        
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <p>No leadership team configured yet.</p>
+            <button class="btn" onclick="switchTab('config')">Configure Team</button>
+        </div>
+    </div>
+    
+    <div id="config-tab" style="display: none;">
+        <div class="section">
+            <div class="section-title">Leadership Team Members</div>
+            <div id="config-list"></div>
+            <button class="btn btn-secondary" onclick="addLeaderRow()">+ Add Member</button>
+        </div>
+        
+        <button class="btn" onclick="saveConfig()">💾 Save & Check</button>
+    </div>
+
+    <script>
+        // Default leadership team - customize this!
+        const DEFAULT_LEADERSHIP = [
+            { name: "Brian", email: "brian@company.com" },
+            { name: "Seth", email: "seth@company.com" }
+        ];
+        
+        let leadershipTeam = [];
+        
+        // Initialize Office.js
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Outlook) {
+                loadConfig();
+            }
+        });
+        
+        function loadConfig() {
+            const saved = localStorage.getItem('leadershipTeam');
+            if (saved) {
+                leadershipTeam = JSON.parse(saved);
+            } else {
+                leadershipTeam = DEFAULT_LEADERSHIP;
+                saveToStorage();
+            }
+            
+            if (leadershipTeam.length === 0) {
+                showEmptyState();
+            } else {
+                checkLeadership();
+            }
+        }
+        
+        function saveToStorage() {
+            localStorage.setItem('leadershipTeam', JSON.stringify(leadershipTeam));
+        }
+        
+        function showEmptyState() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'block';
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            
+            document.getElementById('results-tab').style.display = tabName === 'results' ? 'block' : 'none';
+            document.getElementById('config-tab').style.display = tabName === 'config' ? 'block' : 'none';
+            
+            if (tabName === 'config') {
+                renderConfigList();
+            }
+        }
+        
+        function renderConfigList() {
+            const container = document.getElementById('config-list');
+            container.innerHTML = leadershipTeam.map((leader, idx) => `
+                <div class="config-row">
+                    <input type="text" class="config-input" placeholder="Name" value="${leader.name}" data-idx="${idx}" data-field="name">
+                    <input type="email" class="config-input" placeholder="Email" value="${leader.email}" data-idx="${idx}" data-field="email">
+                    <button class="remove-btn" onclick="removeLeader(${idx})">×</button>
+                </div>
+            `).join('');
+            
+            // Add event listeners
+            container.querySelectorAll('input').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.dataset.idx);
+                    const field = e.target.dataset.field;
+                    leadershipTeam[idx][field] = e.target.value;
+                });
+            });
+        }
+        
+        function addLeaderRow() {
+            leadershipTeam.push({ name: "", email: "" });
+            renderConfigList();
+        }
+        
+        function removeLeader(idx) {
+            leadershipTeam.splice(idx, 1);
+            renderConfigList();
+        }
+        
+        function saveConfig() {
+            // Filter out empty entries
+            leadershipTeam = leadershipTeam.filter(l => l.name && l.email);
+            saveToStorage();
+            switchTab('results');
+            checkLeadership();
+        }
+        
+        function checkLeadership() {
+            if (leadershipTeam.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'none';
+            
+            const item = Office.context.mailbox.item;
+            
+            // Collect all email addresses from the thread
+            const emailAddresses = new Set();
+            const emailContexts = new Map(); // Track where each email appears
+            
+            // Add sender
+            if (item.from) {
+                const fromEmail = item.from.emailAddress.toLowerCase();
+                emailAddresses.add(fromEmail);
+                emailContexts.set(fromEmail, 'From');
+            }
+            
+            // Get TO recipients
+            item.to.getAsync((result) => {
+                if (result.status === Office.AsyncResultStatus.Succeeded) {
+                    result.value.forEach(r => {
+                        const email = r.emailAddress.toLowerCase();
+                        emailAddresses.add(email);
+                        if (!emailContexts.has(email)) {
+                            emailContexts.set(email, 'To');
+                        }
+                    });
+                }
+                
+                // Get CC recipients
+                item.cc.getAsync((ccResult) => {
+                    if (ccResult.status === Office.AsyncResultStatus.Succeeded) {
+                        ccResult.value.forEach(r => {
+                            const email = r.emailAddress.toLowerCase();
+                            emailAddresses.add(email);
+                            if (!emailContexts.has(email)) {
+                                emailContexts.set(email, 'CC');
+                            }
+                        });
+                    }
+                    
+                    // Now check leadership against collected emails
+                    displayResults(emailAddresses, emailContexts);
+                });
+            });
+        }
+        
+        function displayResults(emailAddresses, emailContexts) {
+            const results = leadershipTeam.map(leader => {
+                const leaderEmail = leader.email.toLowerCase();
+                const isPresent = emailAddresses.has(leaderEmail);
+                const context = emailContexts.get(leaderEmail);
+                
+                return {
+                    ...leader,
+                    isPresent,
+                    context
+                };
+            });
+            
+            // Sort: present first, then alphabetically
+            results.sort((a, b) => {
+                if (a.isPresent !== b.isPresent) return b.isPresent ? 1 : -1;
+                return a.name.localeCompare(b.name);
+            });
+            
+            const presentCount = results.filter(r => r.isPresent).length;
+            const absentCount = results.length - presentCount;
+            
+            document.getElementById('present-count').textContent = presentCount;
+            document.getElementById('absent-count').textContent = absentCount;
+            
+            const listHtml = results.map(r => `
+                <div class="leader-item">
+                    <div class="status-icon ${r.isPresent ? 'present' : 'absent'}">
+                        ${r.isPresent ? '✓' : '✗'}
+                    </div>
+                    <div class="leader-info">
+                        <div class="leader-name">${r.name}</div>
+                        <div class="leader-email">${r.email}</div>
+                        ${r.isPresent && r.context ? `<div class="leader-context">${r.context}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('leader-list').innerHTML = listHtml;
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
